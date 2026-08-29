@@ -1,1 +1,86 @@
 
+name: Terraform CI Pipeline
+
+on:
+  push:
+    branches:
+      - "feature/**"
+
+jobs:
+
+  # ============================================================
+  # STAGE 1 - SECURITY & QUALITY TOOLS
+  # ============================================================
+  security-quality:
+    name: Stage 1 - Security & Quality
+    runs-on: self-hosted
+
+    steps:
+
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # Gitleaks
+      - name: Gitleaks
+        run: |
+          gitleaks detect --no-git --source . --config .gitleaks.toml --report-format json --report-path report.json
+
+      # TFLint
+      - name: TFLint
+        run: |
+          tflint --recursive --format compact
+
+      # Infracost
+      - name: Infracost
+        run: |
+          infracost breakdown --path . --format json --out-file infracost-report.json
+          infracost output --path infracost-report.json --format table
+
+      # tfsec
+      - name: tfsec
+        run: |
+          tfsec . --format lovely,json --out tfsec-report
+          tfsec . --format json --out tfsec-report.json
+
+
+  # ============================================================
+  # STAGE 2 - AZURE LOGIN + TERRAFORM
+  # ============================================================
+  terraform:
+    name: Stage 2 - Azure Login & Terraform
+    runs-on: self-hosted
+    needs: security-quality
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # Azure Login
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      # Terraform Init
+      - name: Terraform Init
+        run: |
+          terraform init
+
+      # Terraform Validate
+      - name: Terraform Validate
+        run: |
+          terraform validate
+
+      # Terraform Plan
+      - name: Terraform Plan
+        run: |
+          terraform plan
+
+
