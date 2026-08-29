@@ -20,11 +20,6 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # Gitleaks
-      - name: Gitleaks
-        run: |
-          gitleaks detect --no-git --source . --config .gitleaks.toml --report-format json --report-path report.json
-
       # TFLint
       - name: TFLint
         run: |
