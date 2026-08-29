@@ -20,6 +20,12 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+         # gitleaks
+      - name: gitleaks
+        run: |
+          gitleaks detect --no-git --source . --config .gitleaks.toml --report-format json --report-path report.json
+
+
       # TFLint
       - name: TFLint
         run: |
@@ -28,14 +34,13 @@ jobs:
       # Infracost
       - name: Infracost
         run: |
-          infracost breakdown --path . --format json --out-file infracost-report.json
           infracost output --path infracost-report.json --format table
-
+          
       # tfsec
       - name: tfsec
         run: |
           tfsec . --format lovely,json --out tfsec-report
-          tfsec . --format json --out tfsec-report.json
+          
 
 
   # ============================================================
