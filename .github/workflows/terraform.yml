@@ -16,6 +16,9 @@ jobs:
 
     steps:
 
+      # ======================================================
+      # CHECKOUT
+      # ======================================================
       - name: Checkout Code
         uses: actions/checkout@v4
 
@@ -34,6 +37,7 @@ jobs:
         shell: powershell
         run: |
           tflint --recursive --format compact
+
           if ($LASTEXITCODE -ne 0) {
             Write-Host "TFLint found issues, but continuing pipeline..."
             exit 0
@@ -74,16 +78,31 @@ jobs:
 
     steps:
 
+      # ======================================================
+      # CHECKOUT
+      # ======================================================
       - name: Checkout Code
         uses: actions/checkout@v4
 
       # ======================================================
-      # AZURE LOGIN
+      # AZURE LOGIN - SERVICE PRINCIPAL
       # ======================================================
       - name: Azure Login
-        uses: azure/login@v2
-        with:
-          creds: '{"clientId":"${{ secrets.AZURE_CLIENT_ID }}","clientSecret":"${{ secrets.AZURE_CLIENT_SECRET }}","tenantId":"${{ secrets.AZURE_TENANT_ID }}","subscriptionId":"${{ secrets.AZURE_SUBSCRIPTION_ID }}"}'
+        shell: powershell
+        env:
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+        run: |
+          az login --service-principal `
+            --username "$env:AZURE_CLIENT_ID" `
+            --password "$env:AZURE_CLIENT_SECRET" `
+            --tenant "$env:AZURE_TENANT_ID"
+
+          az account set --subscription "$env:AZURE_SUBSCRIPTION_ID"
+
+          az account show
 
       # ======================================================
       # TERRAFORM INIT
