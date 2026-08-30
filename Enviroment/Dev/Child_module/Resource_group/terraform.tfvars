@@ -17,7 +17,7 @@ rgs = {
         location = "centralindia"
     }
     rg4 ={
-        name = "dev-rg4"
+        name = "dev-rg5"
         location = "centralindia"
     }
     
